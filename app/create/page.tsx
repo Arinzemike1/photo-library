@@ -3,13 +3,17 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { ShareModal } from "@/app/components/share-modal";
+import { useShareModalStore } from "@/lib/store";
 
 export default function CreateEventPage() {
   const router = useRouter();
+  const { openModal } = useShareModalStore();
 
   const [eventName, setEventName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState("");
+  const [createdSlug, setCreatedSlug] = useState<string | null>(null);
 
   const createEvent = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -43,11 +47,26 @@ export default function CreateEventPage() {
       return;
     }
 
-    router.push(`/e/${data.slug}`);
+    setCreatedSlug(data.slug);
+    
+    // Open share modal with the new event URL
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const eventUrl = `${baseUrl}/e/${data.slug}`;
+    openModal(eventUrl, data.name);
+    
+    setIsCreating(false);
+  };
+
+  const handleGoToEvent = () => {
+    if (createdSlug) {
+      router.push(`/e/${createdSlug}`);
+    }
   };
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-white px-6 text-neutral-900">
+      <ShareModal />
+      
       <div className="w-full max-w-lg">
         <button
           onClick={() => router.back()}
@@ -103,6 +122,20 @@ export default function CreateEventPage() {
             {isCreating ? "Creating..." : "Create Event"}
           </button>
         </form>
+
+        {createdSlug && (
+          <div className="mt-8 rounded-2xl border border-neutral-200 bg-neutral-50 p-6">
+            <p className="mb-4 text-sm font-medium text-neutral-600">
+              Event created successfully! Share the link or view the gallery.
+            </p>
+            <button
+              onClick={handleGoToEvent}
+              className="w-full rounded-full bg-neutral-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-neutral-700"
+            >
+              Go to Event Gallery
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );
