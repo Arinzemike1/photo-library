@@ -2,7 +2,7 @@
 
 import { useShareModalStore } from "@/lib/store";
 import { QRCode } from "./qr-code";
-import { Copy, Download, X, MessageCircle } from "lucide-react";
+import { Copy, Download, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import QRCodeLib from "qrcode";
 
@@ -54,13 +54,6 @@ export function ShareModal() {
     }
   };
 
-  const handleWhatsAppShare = () => {
-    const text = encodeURIComponent(
-      `Check out photos from ${eventName}: ${fullUrl}`
-    );
-    window.open(`https://wa.me/?text=${text}`, "_blank");
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
@@ -109,22 +102,13 @@ export function ShareModal() {
         </div>
 
         {/* Share Buttons */}
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={handleWhatsAppShare}
-            className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
-          >
-            <MessageCircle size={18} className="text-green-600" />
-            WhatsApp
-          </button>
           <button
             onClick={handleDownloadQR}
-            className="flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+            className="flex items-center w-full justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
           >
             <Download size={18} />
             Download QR
           </button>
-        </div>
 
         <p className="mt-4 text-center text-xs text-neutral-400">
           Print the QR code and place it around the venue
