@@ -123,7 +123,7 @@ export default function CreateEventPage() {
             {isCreating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Creating...
+                Creating Event...
               </>
             ) : (
               "Create Event"
