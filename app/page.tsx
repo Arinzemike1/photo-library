@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Camera } from "lucide-react";
 
 const photos = [
   {
@@ -22,8 +23,15 @@ const photos = [
 export default function Home() {
   return (
     <main className="min-h-screen bg-white text-neutral-900">
-      <header className="flex items-center justify-between px-6 py-6 md:px-12">
-        <div className="text-lg font-bold tracking-tight">REALTIME PHOTO</div>
+      <header className="flex items-center justify-between px-6 py-5 md:px-12">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900">
+            <Camera className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-md font-bold tracking-wide text-neutral-900 sm:text-base">
+            Realtime Photo
+          </span>
+        </div>
       </header>
 
       <section className="flex min-h-[calc(100vh-88px)] flex-col items-center justify-center px-6 text-center">
@@ -61,11 +69,11 @@ export default function Home() {
               className="aspect-[.82] w-full rounded-2xl object-cover"
             />
           </div>
-          <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center rounded-xl">
+          <div className="absolute bottom-10 sm:bottom-2 left-1/2 flex -translate-x-1/2 items-center rounded-xl">
             <div className="mt-10">
               <Link
                 href="/create"
-                className="rounded-full bg-neutral-900 px-8 py-4 text-sm font-semibold text-white transition hover:bg-neutral-700"
+                className="rounded-full bg-neutral-900 px-4 py-2 sm:px-8 sm:py-4 text-xs sm:text-sm font-semibold text-white transition hover:bg-neutral-700"
               >
                 Create an Event
               </Link>

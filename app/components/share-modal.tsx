@@ -84,7 +84,7 @@ export function ShareModal() {
           <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-neutral-500">
             Event link
           </label>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <input
               type="text"
               value={fullUrl}
@@ -93,7 +93,7 @@ export function ShareModal() {
             />
             <button
               onClick={handleCopy}
-              className="flex items-center gap-2 rounded-xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
+              className="flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
             >
               <Copy size={16} />
               {copied ? "Copied!" : "Copy"}

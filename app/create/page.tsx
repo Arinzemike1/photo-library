@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ShareModal } from "@/app/components/share-modal";
 import { useShareModalStore } from "@/lib/store";
+import { Loader2 } from "lucide-react";
 
 export default function CreateEventPage() {
   const router = useRouter();
@@ -117,9 +118,16 @@ export default function CreateEventPage() {
           <button
             type="submit"
             disabled={isCreating}
-            className="mt-6 w-full rounded-full bg-neutral-900 px-8 py-4 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-6 flex w-full touch-manipulation items-center justify-center gap-2 rounded-full bg-neutral-900 px-8 py-4 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isCreating ? "Creating..." : "Create Event"}
+            {isCreating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              "Create Event"
+            )}
           </button>
         </form>
 
