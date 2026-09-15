@@ -8,6 +8,7 @@ import { LayoutSwitcher } from "@/app/components/layout-switcher";
 import { UploadProgress } from "@/app/components/upload-progress";
 import { getRelativeTime } from "@/lib/utils";
 import { useGalleryStore, useUploadStore } from "@/lib/store";
+import { Camera, Loader2, Plus } from "lucide-react";
 
 export default function EventPage() {
   const params = useParams();
@@ -24,7 +25,6 @@ export default function EventPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
-  const [uploadMessage, setUploadMessage] = useState("");
   const layout = useGalleryStore((state) => state.layout);
   const setLayout = useGalleryStore((state) => state.setLayout);
   const setUploadProgress = useUploadStore((state) => state.setProgress);
@@ -37,6 +37,9 @@ export default function EventPage() {
 
   // Load event and photos
   useEffect(() => {
+    let cancelled = false;
+    let subscription: ReturnType<typeof supabase.channel> | undefined;
+
     const loadEvent = async () => {
       setLoading(true);
       setError("");
@@ -48,11 +51,13 @@ export default function EventPage() {
         .single();
 
       if (eventError || !eventData) {
+        if (cancelled) return;
         setError(eventError?.message || "Event could not be found.");
         setLoading(false);
         return;
       }
 
+      if (cancelled) return;
       setEvent(eventData);
 
       const { data: photoData, error: photoError } = await supabase
@@ -65,35 +70,38 @@ export default function EventPage() {
         console.error("PHOTO ERROR:", photoError);
       }
 
+      if (cancelled) return;
       setPhotos(photoData || []);
       setLoading(false);
+
+      // Subscribe only to inserts for this event.
+      subscription = supabase
+        .channel(`photos-${eventData.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "photos",
+            filter: `event_id=eq.${eventData.id}`,
+          },
+          (payload) => {
+            const newPhoto = payload.new as {
+              id: string;
+              storage_path: string;
+              created_at: string;
+            };
+            setPhotos((current) => [newPhoto, ...current]);
+          },
+        )
+        .subscribe();
     };
 
     loadEvent();
 
-    // Subscribe to realtime updates
-    const subscription = supabase
-      .channel(`photos-${slug}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "photos",
-        },
-        (payload) => {
-          const newPhoto = payload.new as {
-            id: string;
-            storage_path: string;
-            created_at: string;
-          };
-          setPhotos((current) => [newPhoto, ...current]);
-        },
-      )
-      .subscribe();
-
     return () => {
-      subscription.unsubscribe();
+      cancelled = true;
+      subscription?.unsubscribe();
     };
   }, [slug]);
 
@@ -127,7 +135,6 @@ export default function EventPage() {
 
     setUploading(true);
     setError("");
-    setUploadMessage("");
 
     const files = Array.from(e.target.files);
     setUploadProgress(0, files.length);
@@ -163,9 +170,6 @@ export default function EventPage() {
         setUploadProgress(index + 1, files.length);
       }
 
-      setUploadMessage(
-        `${files.length} ${files.length === 1 ? "photo" : "photos"} uploaded successfully!`,
-      );
       window.setTimeout(resetUpload, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
@@ -178,8 +182,13 @@ export default function EventPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p className="text-neutral-500">Loading event...</p>
+      <main className="flex min-h-screen items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-neutral-900" />
+          <p className="text-sm font-medium text-neutral-500">
+            Loading event...
+          </p>
+        </div>
       </main>
     );
   }
@@ -211,18 +220,30 @@ export default function EventPage() {
       )}
 
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-neutral-100 px-6 py-5 md:px-10">
-        <p className="text-lg font-bold tracking-tight">REALTIME PHOTO</p>
+      <header className="flex min-w-0 items-center justify-between gap-3 border-b border-neutral-100 px-4 py-4 sm:px-6 md:px-10">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900">
+            <Camera className="h-4 w-4 text-white" />
+          </div>
+          <span className="truncate text-sm font-bold tracking-tight text-neutral-900 sm:text-base">
+            Realtime Photo
+          </span>
+        </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <LayoutSwitcher layout={layout} setLayout={setLayout} />
 
           <label
-            className={`cursor-pointer rounded-full bg-neutral-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-700 ${
+            title={uploading ? "Uploading photos" : "Upload photos"}
+            aria-label={uploading ? "Uploading photos" : "Upload photos"}
+            className={`flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center gap-2 touch-manipulation rounded-full bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-700 sm:h-auto sm:w-auto sm:px-5 sm:py-3 sm:text-sm ${
               uploading ? "cursor-not-allowed opacity-50" : ""
             }`}
           >
-            {uploading ? "Uploading..." : "Upload Photos"}
+            <Plus className="h-4 w-4 sm:hidden" aria-hidden="true" />
+            <span className="hidden sm:inline">
+              {uploading ? "Uploading..." : "Upload Photos"}
+            </span>
             <input
               type="file"
               accept="image/*"
@@ -247,12 +268,6 @@ export default function EventPage() {
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
           {event.name}
         </h1>
-
-        {uploadMessage && (
-          <p className="mt-4 text-sm font-medium text-green-600">
-            {uploadMessage}
-          </p>
-        )}
 
         {error && (
           <p className="mt-4 text-sm font-medium text-red-600">{error}</p>
@@ -283,9 +298,11 @@ export default function EventPage() {
               const relativeTime = getRelativeTime(photo.created_at);
 
               return (
-                <div
+                <button
+                  type="button"
                   key={photo.id}
-                  className="group relative cursor-pointer overflow-hidden rounded-2xl bg-neutral-100 aspect-square"
+                  aria-label={`Open photo ${index + 1}`}
+                  className="group relative block aspect-square w-full cursor-pointer overflow-hidden rounded-2xl bg-neutral-100 text-left"
                   onClick={() => openLightbox(index)}
                 >
                   <img
@@ -300,7 +317,7 @@ export default function EventPage() {
                       {relativeTime}
                     </p>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>

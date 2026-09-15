@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { getRelativeTime } from "@/lib/utils";
 
 interface Photo {
@@ -107,6 +107,13 @@ export function Lightbox({
         </p>
         <span className="text-white/40">·</span>
         <p className="text-sm text-white/60">{relativeTime}</p>
+        <button
+          onClick={onClose}
+          className="ml-2 rounded-full bg-white/10 p-1.5 text-white transition hover:bg-white/20"
+          aria-label="Close"
+        >
+          <X size={20} strokeWidth={2} />
+        </button>
       </div>
 
       {/* Image container */}
@@ -150,9 +157,10 @@ export function Lightbox({
         </button>
       )}
 
-      {/* Mobile swipe hint */}
+      {/* Mobile hint */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center text-xs text-white/40 md:hidden">
-        Swipe to navigate
+        <p>Swipe to navigate</p>
+        <p className="mt-1">Tap outside to close</p>
       </div>
     </div>
   );
