@@ -26,7 +26,7 @@ export function LayoutSwitcher({ layout, setLayout }: LayoutSwitcherProps) {
           key={id}
           type="button"
           onClick={() => setLayout(id)}
-          className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition ${
+          className={`flex items-center gap-2 rounded-lg p-1 sm:px-3 sm:py-2 text-xs font-medium transition ${
             layout === id
               ? "bg-neutral-900 text-white"
               : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700"
@@ -34,7 +34,7 @@ export function LayoutSwitcher({ layout, setLayout }: LayoutSwitcherProps) {
           title={label}
           aria-label={`${label} layout`}
         >
-          <Icon size={16} />
+          <Icon size={14} />
           {/* Show text on desktop (md and up), hide on mobile */}
           <span className="hidden sm:inline">{label}</span>
         </button>
