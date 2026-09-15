@@ -34,13 +34,13 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="flex min-h-[calc(100vh-88px)] flex-col items-center justify-center px-6 text-center">
+      <section className="flex min-h-[calc(100vh-88px)] flex-col items-center justify-start px-6 pt-6 text-center sm:justify-center sm:pt-0">
         <div className="max-w-3xl">
-          <p className="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-neutral-500">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500 sm:mb-5 sm:text-sm sm:tracking-[0.2em]">
             Live photo sharing
           </p>
 
-          <h1 className="text-5xl font-bold leading-tight tracking-tight sm:text-6xl md:text-7xl">
+          <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-6xl md:text-7xl">
             Capture the moment.
             <br />
             <span className="text-neutral-400">Share it instantly.</span>
@@ -52,7 +52,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="relative mx-auto mt-4 w-full max-w-lg">
+        <div className="relative mx-auto mt-4 w-full max-w-[18rem] sm:max-w-lg">
           <div className="grid grid-cols-2 gap-3">
             <Image
               src={photos[0].src}
@@ -69,15 +69,13 @@ export default function Home() {
               className="aspect-[.82] w-full rounded-2xl object-cover"
             />
           </div>
-          <div className="absolute bottom-10 sm:bottom-2 left-1/2 flex -translate-x-1/2 items-center rounded-xl">
-            <div className="mt-10">
-              <Link
-                href="/create"
-                className="rounded-full bg-neutral-900 px-4 py-2 sm:px-8 sm:py-4 text-xs sm:text-sm font-semibold text-white transition hover:bg-neutral-700"
-              >
-                Create an Event
-              </Link>
-            </div>
+          <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center sm:bottom-2">
+            <Link
+              href="/create"
+              className="whitespace-nowrap rounded-full bg-neutral-900 px-8 py-4 text-sm font-semibold text-white transition hover:bg-neutral-700 sm:px-8 sm:py-4"
+            >
+              Create an Event
+            </Link>
           </div>
         </div>
       </section>
