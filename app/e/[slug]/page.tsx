@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, useEffect, useState } from "react";
+import imageCompression from "browser-image-compression";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Lightbox } from "@/app/components/lightbox";
@@ -128,6 +129,41 @@ export default function EventPage() {
     setLightboxOpen(false);
   };
 
+  const compressImage = async (file: File): Promise<File> => {
+    try {
+      const isHeif = /image\/hei[cf]|\.hei[cf]$/i.test(
+        `${file.type} ${file.name}`,
+      );
+      let sourceFile = file;
+
+      if (isHeif) {
+        const { default: heic2any } = await import("heic2any");
+        const converted = await heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.85,
+        });
+        const convertedBlob = Array.isArray(converted)
+          ? converted[0]
+          : converted;
+        sourceFile = new File([convertedBlob], `${file.name}.jpg`, {
+          type: "image/jpeg",
+        });
+      }
+
+      return await imageCompression(sourceFile, {
+        fileType: "image/jpeg",
+        maxSizeMB: 2,
+        maxWidthOrHeight: 2400,
+        useWebWorker: true,
+      });
+    } catch {
+      throw new Error(
+        `${file.name} could not be processed on this device. Try exporting it as JPG or PNG and upload it again.`,
+      );
+    }
+  };
+
   // Upload photos
   const handleUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -146,17 +182,17 @@ export default function EventPage() {
           throw new Error(`${file.name} is not an image file.`);
         }
 
-        if (file.size > 10 * 1024 * 1024) {
-          throw new Error(`${file.name} is larger than 10MB.`);
-        }
+        const compressedFile = await compressImage(file);
 
-        const fileExt = file.name.split(".").pop();
+        const fileExt = compressedFile.type.split("/").pop() || "jpg";
         const fileName = `${crypto.randomUUID()}.${fileExt}`;
         const filePath = `${event.id}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from("photos")
-          .upload(filePath, file);
+          .upload(filePath, compressedFile, {
+            contentType: compressedFile.type,
+          });
 
         if (uploadError) throw uploadError;
 
@@ -205,7 +241,13 @@ export default function EventPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white text-neutral-900">
+    <main
+      className={`${
+        photos.length === 0
+          ? "flex h-screen flex-col overflow-hidden"
+          : "min-h-screen"
+      } bg-white text-neutral-900`}
+    >
       <UploadProgress />
 
       {/* Lightbox */}
@@ -275,14 +317,34 @@ export default function EventPage() {
       </section>
 
       {/* Gallery */}
-      <section className="px-6 pb-10 md:px-10">
+      <section
+        className={`px-6 pb-10 md:px-10 ${
+          photos.length === 0 ? "flex min-h-0 flex-1 flex-col" : ""
+        }`}
+      >
         {photos.length === 0 ? (
-          <div className="flex min-h-[50vh] items-center justify-center rounded-3xl bg-neutral-50">
+          <div className="flex min-h-0 flex-1 items-center justify-center rounded-3xl bg-neutral-50">
             <div className="text-center">
               <p className="text-lg font-semibold">No photos yet</p>
               <p className="mt-2 text-sm text-neutral-500">
                 Be the first to share a moment.
               </p>
+              <label
+                className={`mt-5 inline-flex cursor-pointer items-center gap-2 rounded-full bg-neutral-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-neutral-700 ${
+                  uploading ? "cursor-not-allowed opacity-50" : ""
+                }`}
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                {uploading ? "Uploading..." : "Upload Photos"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleUpload}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </label>
             </div>
           </div>
         ) : (
