@@ -33,6 +33,11 @@ export function ShareModal() {
   };
 
   const handleDownloadQR = async () => {
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const iosWindow = isIOS ? window.open("", "_blank") : null;
+
     try {
       const dataUrl = await QRCodeLib.toDataURL(fullUrl, {
         width: 400,
@@ -42,6 +47,13 @@ export function ShareModal() {
           light: "#FFFFFF",
         },
       });
+
+      // iOS Safari ignores the download attribute for data URLs. Opening the
+      // image in a new tab lets the user save it with the native image menu.
+      if (iosWindow) {
+        iosWindow.location.href = dataUrl;
+        return;
+      }
 
       const link = document.createElement("a");
       link.href = dataUrl;
