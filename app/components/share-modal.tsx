@@ -2,13 +2,14 @@
 
 import { useShareModalStore } from "@/lib/store";
 import { QRCode } from "./qr-code";
-import { Copy, Download, X } from "lucide-react";
+import { Copy, Download, Share2, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import QRCodeLib from "qrcode";
 
 export function ShareModal() {
   const { isOpen, eventUrl, eventName, closeModal } = useShareModalStore();
   const [copied, setCopied] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     if (copied) {
@@ -16,6 +17,13 @@ export function ShareModal() {
       return () => clearTimeout(timer);
     }
   }, [copied]);
+
+  useEffect(() => {
+    setIsIOS(
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1),
+    );
+  }, []);
 
   if (!isOpen) return null;
 
@@ -32,35 +40,57 @@ export function ShareModal() {
     }
   };
 
-  const handleDownloadQR = async () => {
-    const isIOS =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    const iosWindow = isIOS ? window.open("", "_blank") : null;
+  const createQRFile = async () => {
+    const dataUrl = await QRCodeLib.toDataURL(fullUrl, {
+      width: 400,
+      margin: 2,
+      color: {
+        dark: "#171717",
+        light: "#FFFFFF",
+      },
+    });
+    const [header, encodedImage] = dataUrl.split(",");
+    const mimeType = header.match(/data:(.*?);base64/)?.[1] ?? "image/png";
+    const binaryImage = atob(encodedImage);
+    const imageBytes = Uint8Array.from(binaryImage, (character) =>
+      character.charCodeAt(0),
+    );
+    const fileName = `${eventName.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-qr-code.png`;
 
+    return new File([imageBytes], fileName, { type: mimeType });
+  };
+
+  const handleShareQR = async () => {
     try {
-      const dataUrl = await QRCodeLib.toDataURL(fullUrl, {
-        width: 400,
-        margin: 2,
-        color: {
-          dark: "#171717",
-          light: "#FFFFFF",
-        },
-      });
-
-      // iOS Safari ignores the download attribute for data URLs. Opening the
-      // image in a new tab lets the user save it with the native image menu.
-      if (iosWindow) {
-        iosWindow.location.href = dataUrl;
+      const file = await createQRFile();
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `${eventName} QR Code`,
+          text: `Scan to join ${eventName}`,
+        });
         return;
       }
 
+      await handleDownloadQR(file);
+    } catch (err) {
+      if ((err as DOMException).name !== "AbortError") {
+        console.error("Failed to share QR:", err);
+      }
+    }
+  };
+
+  const handleDownloadQR = async (file?: File) => {
+    try {
+      const qrFile = file ?? (await createQRFile());
+      const objectUrl = URL.createObjectURL(qrFile);
       const link = document.createElement("a");
-      link.href = dataUrl;
-      link.download = `${eventName.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-qr-code.png`;
+      link.href = objectUrl;
+      link.download = qrFile.name;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(objectUrl);
     } catch (err) {
       console.error("Failed to download QR:", err);
     }
@@ -114,13 +144,24 @@ export function ShareModal() {
         </div>
 
         {/* Share Buttons */}
+        <div className="flex flex-col gap-2 sm:flex-row">
           <button
-            onClick={handleDownloadQR}
-            className="flex items-center w-full justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+            onClick={handleShareQR}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-neutral-700"
           >
-            <Download size={18} />
-            Download QR
+            <Share2 size={18} />
+            Share QR
           </button>
+          {!isIOS && (
+            <button
+              onClick={() => handleDownloadQR()}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50"
+            >
+              <Download size={18} />
+              Download QR
+            </button>
+          )}
+        </div>
 
         <p className="mt-4 text-center text-xs text-neutral-400">
           Print the QR code and place it around the venue
