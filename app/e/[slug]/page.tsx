@@ -278,14 +278,12 @@ export default function EventPage() {
           <label
             title={uploading ? "Uploading photos" : "Upload photos"}
             aria-label={uploading ? "Uploading photos" : "Upload photos"}
-            className={`flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center gap-2 touch-manipulation rounded-full bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-700 sm:h-auto sm:w-auto sm:px-5 sm:py-3 sm:text-sm ${
-              uploading ? "cursor-not-allowed opacity-50" : ""
+             className={`hidden sm:flex shrink-0 cursor-pointer items-center justify-center gap-2 touch-manipulation rounded-full bg-neutral-900 text-sm font-semibold text-white transition hover:bg-neutral-700 sm:px-5 sm:py-3 ${
+            uploading ? "cursor-not-allowed opacity-50" : ""
             }`}
           >
-            <Plus className="h-4 w-4 sm:hidden" aria-hidden="true" />
-            <span className="hidden sm:inline">
-              {uploading ? "Uploading..." : "Upload Photos"}
-            </span>
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            <span>{uploading ? "Uploading..." : "Upload Photos"}</span>
             <input
               type="file"
               accept="image/*"
@@ -300,12 +298,37 @@ export default function EventPage() {
 
       {/* Event info */}
       <section className="px-6 pb-8 pt-10 md:px-10">
-        <div className="mb-3 flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-green-500" />
-          <span className="text-sm font-medium text-neutral-500">
-            Live · {photos.length} {photos.length === 1 ? "photo" : "photos"}
-          </span>
-        </div>
+        <div className="mb-3 flex items-center justify-between w-full">
+    {/* Live Counter */}
+    <div className="flex items-center gap-2">
+      <span className="h-2 w-2 rounded-full bg-green-500" />
+      <span className="text-sm font-medium text-neutral-500">
+        Live · {photos.length} {photos.length === 1 ? "photo" : "photos"}
+      </span>
+    </div>
+
+    {/* Mobile Only Upload Button (Plus + Text) */}
+    <label
+      className={`flex sm:hidden cursor-pointer items-center justify-center gap-1.5 touch-manipulation rounded-full bg-neutral-900 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-neutral-700 active:scale-95 ${
+        uploading ? "cursor-not-allowed opacity-50" : ""
+      }`}
+    >
+      {uploading ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+      )}
+      <span>{uploading ? "Uploading..." : "Upload"}</span>
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleUpload}
+        disabled={uploading}
+        className="hidden"
+      />
+    </label>
+  </div>
 
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
           {event.name}
